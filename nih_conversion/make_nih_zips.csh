@@ -1,23 +1,45 @@
 #!/bin/csh
 
+set scripts_dir = '/net/zfs-black/BLACK/black/git/newtics_imaging/nih_conversion'
 set study_dir = '/net/zfs-black/BLACK/black/NewTics'
+set outdir = ${study_dir}/zips_nophi
 
 pushd $study_dir
 
+set error_log = 'zip_error.log'
+if ( -e $error_log ) /bin/rm $error_log
+
+if ( -e missing_params.lst ) /bin/rm missing_params.lst
+
+# handle all the functional scans (source from params-like file)
 set patids = `find . -maxdepth 1 -type d -name "NT*"`
 foreach patid ( $patids )
-	if ( ! -e ${patid}/${patid}.params ) then
-		echo $patid >> missing_params.lst
+	pushd $patid
+
+	# keep track of sessions that were skipped
+	set params = `ls *.{params,cnf}`
+	if ( $status ) then
+		echo $patid >> ../missing_params.lst
+		popd
 		continue
 	endif
 
-	pushd $patid
+	# iterate over all params files for subject (may be more than one if separate PCASL/BOLD params)
+	foreach f ( $params )
+		source $f
+	end
 
-	source ${patid}.params
+	# create separate zip of DICOM data for each scan
 	foreach scan ( $sefm $fstd $pcasl )
-		if ( ! -e ${study_dir}/zips/${patid}_study${scan}.zip ) then
+		if ( ! -e ${outdir}/${patid}_study${scan}.zip ) then
+			python3 ${scripts_dir}/check_headers.py "study${scan}/*.dcm"
+			if ( $status ) then
+				echo "failed for $patid $scan" >> $error_log
+				continue
+			endif
+
 			pushd study${scan}
-			zip ${study_dir}/zips/${patid}_study${scan}.zip *.dcm
+			zip ${outdir}/${patid}_study${scan}.zip *.dcm
 			popd
 		endif
 	end
@@ -32,27 +54,41 @@ set sessions = `find . -maxdepth 1 -type d -name "NT*"`
 foreach sess ( $sessions )
 	set sess = $sess:t
 
-	set scans = `find ${sess}/scans -mindepth 1 -type d -prune`
+	pushd $sess
+
+	# zip facemasked scans downloaded from CNDA (structured with extra directory under scan number)
+	set scans = `find scans -mindepth 1 -type d -prune`
 	foreach scan ( $scans )
 		set scan = $scan:t
-		if ( ! -e ${study_dir}/zips/${sess}_study${scan}_defaced.zip ) then
-			pushd ${sess}/scans/${scan}/DICOM_DEFACED
-			zip ${study_dir}/zips/${sess:t}_study${scan}_defaced.zip *.dcm
+		if ( ! -e ${outdir}/${sess}_study${scan}_defaced.zip ) then
+			pushd scans/${scan}/DICOM_DEFACED
+			zip ${outdir}/${sess:t}_study${scan}_defaced.zip *.dcm
 			popd
 		endif
 	end
 
-	set scans = `find ${sess}/DICOM_DEFACED -mindepth 1 -type d -name "study*" -prune`
+	# zip facemasked scans that were processed offline 
+	# TODO: set up offline facemasking to be structured the same as CNDA
+	set scans = `find DICOM_DEFACED -mindepth 1 -type d -name "study*" -prune`
 	foreach scan ( $scans )
 		set scan = $scan:t
-		if ( ! -e ${study_dir}/zips/${sess}_${scan}_defaced.zip ) then
-			pushd ${sess}/DICOM_DEFACED/${scan}
-			zip ${study_dir}/zips/${sess:t}_${scan}_defaced.zip *.dcm
+		if ( ! -e ${outdir}/${sess}_${scan}_defaced.zip ) then
+			set scandir = DICOM_DEFACED/${scan}
+			python3 ${scripts_dir}/check_headers.py "${scandir}/*.dcm"
+			if ( $status ) then
+				echo "failed for $sess $scan" >> $error_log
+				continue
+			endif
+
+			pushd $scandir
+			zip ${outdir}/${sess:t}_${scan}_defaced.zip *.dcm
 			popd
 		endif
 	end
+
+	popd
 end
 
-popd
+popd # out of defaced
 
-popd
+popd # out of study_dir
