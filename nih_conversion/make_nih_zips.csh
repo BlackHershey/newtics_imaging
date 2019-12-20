@@ -6,7 +6,7 @@ set outdir = ${study_dir}/zips_nophi
 
 pushd $study_dir
 
-set error_log = 'zip_error.log'
+set error_log = "${study_dir}/zip_error.log"
 if ( -e $error_log ) /bin/rm $error_log
 
 if ( -e missing_params.lst ) /bin/rm missing_params.lst
