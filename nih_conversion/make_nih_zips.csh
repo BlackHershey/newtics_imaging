@@ -2,7 +2,7 @@
 
 set scripts_dir = '/net/zfs-black/BLACK/black/git/newtics_imaging/nih_conversion'
 set study_dir = '/net/zfs-black/BLACK/black/NewTics'
-set outdir = ${study_dir}/zips_nophi
+set outdir = ${study_dir}/zips
 
 pushd $study_dir
 
