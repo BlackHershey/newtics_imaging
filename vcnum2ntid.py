@@ -6,11 +6,14 @@ import pydicom
 import re
 import requests
 import sys
-sys.path.append('/net/zfs-black/BLACK/black/git/utils')
+sys.path.append('/net/zfs-black/BLACK/black/git/utils/cnda')
 
 from cnda_common import get_all_sessions
 from getpass import getpass
 from glob import glob
+
+# Create master list of vcnum to NTID mapping
+# 	Sources patid from dicom headers and then checks against CNDA if it belongs to NT project
 
 parser = argparse.ArgumentParser()
 parser.add_argument('inpath', help='top-level directory containing vcnum folders')
@@ -19,31 +22,38 @@ parser.add_argument('--outfile', default=os.path.join(os.getcwd(), 'NT_vcnum.csv
 parser.add_argument('--redo', action='store_true')
 args = parser.parse_args()
 
-vcnum_folders = [ d for d in glob(os.path.join(args.inpath, '*'), recursive=True) if os.path.isdir(d) and re.match('vc', os.path.basename(d), flags=re.IGNORECASE) ]
+# get all directories in inpath that could be NewTics (either vcnum or NTID)
+vcnum_folders = [ d for d in glob(os.path.join(args.inpath, '*')) if os.path.isdir(d) and re.match('(vc|nt)', os.path.basename(d), flags=re.IGNORECASE) ]
 
+# get all CNDA sessions for NewTics
 sess = requests.Session()
-sess.auth = (args.cnda_username, getpass())
+sess.auth = (args.cnda_username, getpass('Enter CNDA password:'))
 cnda_sessions = [ item['label'] for item in get_all_sessions(sess, 'NP919') ]
 
-existing_vcnums = np.genfromtxt(args.outfile, usecols=0, dtype='str') if not args.redo and os.path.exists(args.outfile) else []
+# get list of ids we've already mapped
+# 	speeds up processing since we don't have to repeat API call for every session
+existing_vcnums = np.genfromtxt(args.outfile, usecols=0, dtype='str', delimiter=',') if not args.redo and os.path.exists(args.outfile) else []
 
 results = []
 for folder in vcnum_folders:
 	vcnum = os.path.basename(folder)
 	print('Processing {}...'.format(vcnum))
 
+	# if id was already processed, skip to next
 	if vcnum in existing_vcnums:
 		print('\tvcnum is already mapped')
 		continue
 
+	# otherwise, find dicoms for subject
 	dcms = glob(os.path.join(folder, '**/*.dcm'), recursive=True)
 	if not dcms:
 		continue
 
+	# extract patid from dcm headers and split into subject and session
 	ds = pydicom.dcmread(dcms[0])
 	sub = str(ds.PatientName)
 	patid = ds.PatientID
-	_, _, ses = patid.partition('_')
+	_, _, ses = patid.partition('_') # assumes everything after first underscore is the session
 	print(sub,ses)
 
 	# check if subject name appears in any cnda session
