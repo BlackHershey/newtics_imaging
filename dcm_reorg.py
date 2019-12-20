@@ -1,3 +1,4 @@
+import argparse
 import glob
 import numpy as np
 import os
@@ -5,7 +6,7 @@ import os.path
 import pydicom
 import re
 import sys
-sys.path.append('/net/zfs-black/BLACK/black/git/utils')
+sys.path.append('/net/zfs-black/BLACK/black/git/utils/4dfp')
 
 from params_setup import gen_params_file
 from subprocess import call
@@ -15,8 +16,12 @@ study_dir = '/net/zfs-black/BLACK/black/NewTics'
 
 subsearch = re.compile('NT(\d{3})', flags=re.IGNORECASE)
 
+parser = argparse.ArgumentParser()
+parser.add_argument('vcnumfile', help='CSV or single column file containing vcnums to process')
+args = parser.parse_args()
+
 os.chdir(study_dir)
-vcnums = np.genfromtxt('scripts/vcnum.lst', dtype='str')
+vcnums = np.genfromtxt(args.vcnumfile, dtype='str', usecols=0,delimiter=',')
 
 for num in vcnums:
 	print('Processing vcnum', num)
@@ -38,6 +43,10 @@ for num in vcnums:
 	if int(subsearch.match(sub).group(1)) < 818: # only care about R01 subjects right now
 		continue
 
+	if ':' in patid:
+		print('Invalid patid', patid, vc_folder)
+		continue
+
 	if os.path.exists(patid):
 		print('patid folder already exists')
 		continue
@@ -55,19 +64,16 @@ for num in vcnums:
 		call(['dcm_sort', inpath])
 
 
-	os.chdir('..')
 
-	if not os.path.exists(patid) or not [ f for f in os.listdir(patid) if f.endswith('.studies.txt') ]:
+	if not glob.glob('*.studies.txt'):
 		print('skipping', patid)
 		continue
 
-	# TODO: figue out how best to do BOLD + pCASL here --  this is NT specific, so could hard code both; for gen_params -- just outfile name as new option?
-	day1_patid = patid.split('_')[0] if patid.endswith('_12mo') else None
-	gen_params_file(patid, inpath, os.path.join(study_dir, 'scripts', 'NT_bold_config.json'), duplicates='norm', day1_patid=day1_patid, outfile=patid + '.params')
-	gen_params_file(patid, inpath, os.path.join(study_dir, 'scripts', 'NT_pcasl_config.json'), duplicates='norm', day1_patid=patid, outfile=patid + '_pcasl.params')
+	# output file with ".cnf" extension
+	# 	set up similar to a params file, but not actually valid for 4dfp processing (took some shortcuts)
+	#	(invalid because no day1 logic and pcasl/bold params should be separate)
+	gen_params_file(patid, os.path.join(study_dir, 'NT_config.json'), duplicates='norm', outfile=patid + '_nih.cnf')
+
+	os.chdir('..')
 
 
-
-# if __name__ == '__main__':
-# 	parser = argparse.ArgumentParser()
-# 	parser.add_argument('inpath', help='directory where study raw data lives')
