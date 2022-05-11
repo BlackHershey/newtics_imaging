@@ -6,13 +6,13 @@ import os.path
 import pydicom
 import re
 import sys
-sys.path.append('/net/zfs-black/BLACK/black/git/utils/4dfp')
+sys.path.append('/data/nil-bluearc/black/git/utils/4dfp')
 
 from params_setup import gen_params_file
 from subprocess import call
 
-rawdata_dir = '/data/cn3/rawdata/tourettes/Prisma'
-study_dir = '/net/zfs-black/BLACK/black/NewTics'
+rawdata_dir = '/data/nil-bluearc/black/NewTics/CNDA_DOWNLOAD'
+study_dir = '/data/nil-bluearc/black/NewTics'
 
 subsearch = re.compile('NT(\d{3})', flags=re.IGNORECASE)
 
