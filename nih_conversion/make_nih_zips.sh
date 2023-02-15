@@ -1,13 +1,21 @@
 #!/bin/bash
 
-scripts_dir="/data/nil-bluearc/black/git/newtics_imaging/nih_conversion"
-study_dir="/data/nil-bluearc/black/NewTics"
+scripts_dir=${1}
+study_dir=${2}
 outdir=${study_dir}/zips
+
+# USAGE
+if [ "$#" -ne 2 ]; then
+	echo "Usage: ./make_nih_zips.sh <scripts_dir> <study_dir>"
+	echo " e.g.: ./make_nih_zips.sh "
+	exit 1
+fi
 
 redo_func_zips=0
 redo_defaced_zips=0
 
 pushd ${study_dir}
+mkdir -p ${study_dir}/zips
 
 error_log="${study_dir}/zip_error.log"
 if [ -f "$error_log" ]; then
@@ -24,14 +32,21 @@ if [ -f "missing_params.lst" ]; then
 fi
 
 # handle all the functional scans (source from params-like file)
-NT_nih_params_files=(`find ${study_dir} -maxdepth 2 -regextype posix-extended -regex ".*NT.*_(screen|12mo)_nih\.cnf$" -print`)
+nih_params_files=(`find ${study_dir} -maxdepth 2 -regextype posix-extended -regex ".*_nih\.cnf$" -print`)
 
-for nih_params_file in "${NT_nih_params_files[@]}"
+for nih_params_file in "${nih_params_files[@]}"
 do
 	patid=`echo ${nih_params_file} | cut -d"/" -f6`
-	Subject=`echo ${patid} | cut -c1-5`
 
-	pushd $patid
+	if [[ ${patid} =~ NT.* ]]; then
+		Subject=`echo ${patid} | cut -c1-5`
+	elif [[ ${patid} =~ L(o|O)TS.* ]]; then
+		Subject=`echo ${patid} | cut -c1-7`
+	else
+		Subject=${patid}
+	fi
+
+	pushd ${patid}
 
 	# keep track of sessions that were skipped
 	if [ ! -f "${patid}_nih.cnf" ]; then
@@ -41,7 +56,7 @@ do
 	fi
 
 	# create separate zip of DICOM data for each scan
-	atest=(`echo $test | grep -Eo "[0-9]{1,}"`)
+	atest=(`echo ${test} | grep -Eo "[0-9]{1,}"`)
 	t1_series=(`cat ${nih_params_file} | grep "mprs" | cut -d"(" -f2 | cut -d")" -f1`)
 	t2_series=(`cat ${nih_params_file} | grep "tse" | cut -d"(" -f2 | cut -d")" -f1`)
 	bold_series=(`cat ${nih_params_file} | grep "fstd" | cut -d"(" -f2 | cut -d")" -f1`)
