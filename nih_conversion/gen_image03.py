@@ -56,7 +56,7 @@ def gen_image03(study_dir, scan_mapping_json, patid_glob_pattern):
 
     results = []
     processed_zips = []
-    for patid in patids:
+    for patid in sorted(patids):
         # infer visit_type from patid (screen/baseline, 12mo, etc.)
         if "12mo" in patid:
             visit_type = "12month"
