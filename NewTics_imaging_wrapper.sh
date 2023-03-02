@@ -29,12 +29,12 @@ mask_face_QA_dir=${study_dir}"/maskface_QA"
 BIDS_dir=${study_dir}"/BIDS"
 BIDS_heuristic=${BIDS_dir}"/code/NewTics_heuristic.py"
 dicom_subdir=${study_dir}"/CNDA_DOWNLOAD"
-scripts_dir='/data/nil-bluearc/black/git/newtics_imaging'
+scripts_dir='/data/nil-bluearc/black/git/tourette_imaging'
 venv_dir='/data/nil-bluearc/black/env'
 machine=$(uname -n)
 case "${machine}" in
-	hal ) source ${venv_dir}/nt_img_venv_hal/bin/activate ;;
-	cerbo ) source ${venv_dir}/nt_img_env_cerbo/bin/activate ;;
+	hal ) source ${venv_dir}/ts_img_env_hal/bin/activate ;;
+	cerbo ) source ${venv_dir}/ts_img_env_cerbo/bin/activate ;;
 	* )
 		echo "ERROR: This script only runs on cerbo or hal."
 		exit 1 ;;
