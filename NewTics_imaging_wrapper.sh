@@ -14,11 +14,11 @@ fi
 
 DO_FACEMASK=true
 DO_BIDS_AND_MRIQC=true
-DO_FREESURFER=true
+DO_FREESURFER=false
 DO_ENIGMA_FREESURFER=true
 
-
-study_dir='/data/nil-bluearc/black/NewTics'
+study_name='NewTics'
+study_dir='/data/nil-bluearc/black/'${study_name}
 ntdb_subject_csv=${study_dir}'/ntdb_subjects.csv'
 
 # XNAT mask_face
@@ -28,6 +28,7 @@ mask_face_QA_dir=${study_dir}"/maskface_QA"
 # BIDS
 BIDS_dir=${study_dir}"/BIDS"
 BIDS_heuristic=${BIDS_dir}"/code/NewTics_heuristic.py"
+BIDS_naming_log=${study_dir}/${study_name}"_BIDS_naming_log.csv"
 dicom_subdir=${study_dir}"/CNDA_DOWNLOAD"
 scripts_dir='/data/nil-bluearc/black/git/tourette_imaging'
 venv_dir='/data/nil-bluearc/black/env'
@@ -85,6 +86,7 @@ curl -b JSESSIONID=$JSESSION -o NewTics_MR_sessions.csv "${XNAT_host}/REST/proje
 			scanner_id=""
 			vc_number=""
 			usable_minutes_rs_fmri=""
+			anon_needed=false
 
 			# switch over subject to get BIDS session
 			case "${Subject}" in
@@ -99,22 +101,25 @@ curl -b JSESSIONID=$JSESSION -o NewTics_MR_sessions.csv "${XNAT_host}/REST/proje
     					* ) BIDS_session="SKIP" ;;
     				esac ;;
     			NEWT* )
+					anon_needed=true
     				case "${MR_ID}" in
-    					*_s1 ) BIDS_session="s1" ;;
-    					*_s2 ) BIDS_session="s2" ;;
+    					*_s1 ) BIDS_session="SKIP" ;;
+    					*_s2 ) BIDS_session="SKIP" ;;
     					*    ) BIDS_session="SKIP" ;;
     				esac ;;
     			TRACK?? )
+					anon_needed=true
     				case "${MR_ID}" in
-    					*_s1 ) BIDS_session="s1" ;;
-    					*_s2 ) BIDS_session="s2" ;;
-    					*_s3 ) BIDS_session="s3" ;;
+    					*_s1 ) BIDS_session="SKIP" ;;
+    					*_s2 ) BIDS_session="SKIP" ;;
+    					*_s3 ) BIDS_session="SKIP" ;;
     					*    ) BIDS_session="SKIP" ;;
     				esac ;;
     			CTS* )
     				case "${MR_ID}" in
     					CTS???_vc????? ) 
-    						BIDS_session=`echo ${MR_ID} | sed "s/CTS..._vc//"` ;;
+    						BIDS_session=`echo ${MR_ID} | sed "s/CTS..._vc//"`
+							BIDS_session="SKIP" ;;
     					* ) BIDS_session="SKIP" ;;
     				esac ;;
     			MSCPI* )
@@ -124,7 +129,7 @@ curl -b JSESSIONID=$JSESSION -o NewTics_MR_sessions.csv "${XNAT_host}/REST/proje
     					* ) BIDS_session="SKIP" ;;
     				esac ;;
     			NIC???? )
-    				BIDS_session="01" ;;
+    				BIDS_session="SKIP" ;;
     			TR??? )
     				case "${MR_ID}" in
     					TR???_vc????? ) 
@@ -134,7 +139,7 @@ curl -b JSESSIONID=$JSESSION -o NewTics_MR_sessions.csv "${XNAT_host}/REST/proje
 				LOTS* )
     				case "${MR_ID}" in
     					LOTS???_vc????? ) 
-    						BIDS_session=`echo ${MR_ID} | sed "s/LOTS..._vc//"` ;;
+    						BIDS_session="SKIP" ;;
     					* ) BIDS_session="SKIP" ;;
     				esac ;;
     			TS_M* )
@@ -150,6 +155,15 @@ curl -b JSESSIONID=$JSESSION -o NewTics_MR_sessions.csv "${XNAT_host}/REST/proje
 			session_dicom_rootdir=${dicom_subdir}/${Subject}/${MR_ID}
 			session_dicom_dir=${dicom_subdir}/${Subject}/${MR_ID}/${MR_ID}
 			
+			# Check that a BIDS_subject and BIDS_session were defined
+			if [ "${BIDS_subject}" == "SKIP" ] || [ "${BIDS_session}" == "SKIP" ]; then
+				echo ","${Subject}","${MR_ID}",Skipping - name does not match pattern,,," >> ${BIDS_naming_log}
+				continue
+			else
+				echo ","${Subject}","${MR_ID}","${BIDS_subject}","${BIDS_session}",sub-"${BIDS_subject}"_ses-"${BIDS_session}","${anon_needed} >> ${BIDS_naming_log}
+				# continue
+			fi
+
 			pushd ${Subject}/${MR_ID}
 			if [ ! -s "${study_dir}/${MR_ID}/${MR_ID}.studies.txt" ]; then
 			 	curl -b JSESSIONID=${JSESSION} -o ${MR_ID}.zip "${XNAT_host}/data/projects/${XNAT_project}/subjects/${Subject}/experiments/${MR_ID}/scans/ALL/resources/DICOM/files?format=zip"
@@ -261,17 +275,34 @@ curl -b JSESSIONID=$JSESSION -o NewTics_MR_sessions.csv "${XNAT_host}/REST/proje
 					popd
 					
 					# run ENIGMA TS Freesurfer T1 pipeline
-					enigma_subjid="sub-"${BIDS_subject}"_ses-"${BIDS_session}
-					aparc_aseg_mgz=${enigma_output_dir}"/"${enigma_subjid}"/mri/aparc+aseg.mgz"
-					if [ "${best_T1w_BIDS_run}" != "00" ] && [ ! -f "${aparc_aseg_mgz}" ]; then
-						# link input nii.gz to ENIGMA inputs dir
+					if [ "${best_T1w_BIDS_run}" != "00" ]; then
+						if ${anon_needed}; then
+							# anonymize subjid using pre-generated identifier
+							anon_number=`grep ${base_subject} ${anon_key_csv} | cut -d"," -f3`
+							anon_cohort=`grep ${base_subject} ${anon_key_csv} | cut -d"," -f4`
+							echo "anonymization = "${anon_cohort}" "${anon_number}
+							enigma_subjid="sub-"${institution_code}${anon_cohort}`printf "%03d" ${anon_number}`"_ses-"${BIDS_session}
+						else
+							enigma_subjid="sub-"${BIDS_subject}"_ses-"${BIDS_session}
+						fi
+						echo "####### enigma_subjid = "${enigma_subjid}
+						# copy input nii.gz to ENIGMA inputs dir
+						best_T1w_BIDS_series=`grep "SeriesNumber" ${BIDS_dir}/sub-${BIDS_subject}/ses-${BIDS_session}/anat/sub-${BIDS_subject}_ses-${BIDS_session}_rec-${norm_string}_run-${best_T1w_BIDS_run}_T1w.json | head -1 | awk '{print $2}' | cut -d"," -f1`
 						mkdir -p ${enigma_input_dir}/${enigma_subjid}
-						ln -s \
+						cp -upr \
 							${BIDS_dir}/sub-${BIDS_subject}/ses-${BIDS_session}/anat/sub-${BIDS_subject}_ses-${BIDS_session}_rec-${norm_string}_run-${best_T1w_BIDS_run}_T1w.nii.gz \
 							${enigma_input_dir}/${enigma_subjid}/${enigma_subjid}.nii.gz
+						cp -upr \
+							${BIDS_dir}/sub-${BIDS_subject}/ses-${BIDS_session}/anat/sub-${BIDS_subject}_ses-${BIDS_session}_rec-${norm_string}_run-${best_T1w_BIDS_run}_T1w.json \
+							${enigma_input_dir}/${enigma_subjid}/${enigma_subjid}.json
+						chmod 664 ${enigma_input_dir}/${enigma_subjid}/*.*
+						if ${anon_needed}; then
+							# clean nifti header and json
+							python ${scripts_dir}/clean_nii_header.py ${enigma_input_dir}/${enigma_subjid}_series-${best_T1w_BIDS_series}/${enigma_subjid}_series-${best_T1w_BIDS_series}.nii.gz -n aux_file -j ImageComments
+						fi
 
 						# Run ENIGMA Freesurfer
-						${enigma_ts_repo}/1_enigma_runfreesurfer.sh ${enigma_subjid} ${enigma_base_dir}
+						# ${enigma_ts_repo}/1_enigma_runfreesurfer.sh ${enigma_subjid} ${enigma_base_dir}
 					fi
 				fi
 			fi
@@ -282,4 +313,3 @@ curl -b JSESSIONID=$JSESSION -o NewTics_MR_sessions.csv "${XNAT_host}/REST/proje
 } < "NewTics_MR_sessions.csv"
 
 exit 0
-
