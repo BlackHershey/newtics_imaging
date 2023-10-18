@@ -2,11 +2,11 @@
 
 scripts_dir=${1}
 study_dir=${2}
-outdir=${study_dir}/zips
+zip_dir=${3}
 
 # USAGE
-if [ "$#" -ne 2 ]; then
-	echo "Usage: ./make_nih_zips.sh <scripts_dir> <study_dir>"
+if [ "$#" -ne 3 ]; then
+	echo "Usage: ./make_nih_zips.sh <scripts_dir> <study_dir> <zip_dir>"
 	echo " e.g.: ./make_nih_zips.sh "
 	exit 1
 fi
@@ -15,7 +15,7 @@ redo_func_zips=0
 redo_defaced_zips=0
 
 pushd ${study_dir}
-mkdir -p ${study_dir}/zips
+mkdir -p ${zip_dir}
 
 error_log="${study_dir}/zip_error.log"
 if [ -f "$error_log" ]; then
@@ -76,7 +76,7 @@ do
 	for dicom_series in "${struct_series[@]}"
 	do	
 		if [ "${dicom_series}" -gt "0" ]; then
-			if [ ! -f "${outdir}/${patid}_study${dicom_series}_defaced.zip" ] || [ "${redo_defaced_zips}" -gt "0" ]; then
+			if [ ! -f "${zip_dir}/${patid}_study${dicom_series}_defaced.zip" ] || [ "${redo_defaced_zips}" -gt "0" ]; then
 				python ${scripts_dir}/check_headers.py "study${dicom_series}_defaced/*.*"
 				if [ "$?" -ne "0" ]; then
 					echo "scrubbing "${patid}" study"${dicom_series}"_defaced" >> ${scrub_log}
@@ -89,7 +89,7 @@ do
 				fi
 
 				pushd study${dicom_series}"_defaced"
-				zip ${outdir}/${patid}_study${dicom_series}_defaced.zip *.*
+				zip ${zip_dir}/${patid}_study${dicom_series}_defaced.zip *.*
 				popd
 			fi
 		fi
@@ -98,7 +98,7 @@ do
 	for dicom_series in "${func_series[@]}"
 	do
 		if [ "${dicom_series}" -gt "0" ]; then
-			if [ ! -f "${outdir}/${patid}_study${dicom_series}.zip" ] || [ ${redo_func_zips} -gt "0" ]; then
+			if [ ! -f "${zip_dir}/${patid}_study${dicom_series}.zip" ] || [ ${redo_func_zips} -gt "0" ]; then
 				python ${scripts_dir}/check_headers.py "study${dicom_series}/*.*"
 				if [ "$?" -ne "0" ]; then
 					echo "scrubbing "${patid}" study"${dicom_series} >> ${scrub_log}
@@ -111,7 +111,7 @@ do
 				fi
 
 				pushd study${dicom_series}
-				zip ${outdir}/${patid}_study${dicom_series}.zip *.*
+				zip ${zip_dir}/${patid}_study${dicom_series}.zip *.*
 				popd
 			fi
 		fi
