@@ -18,7 +18,8 @@ echo ${MR_ID}
 
 mprs=(`cat ${nih_params_file} | grep "mprs" | cut -d"(" -f2 | cut -d")" -f1`)
 tse=(`cat ${nih_params_file} | grep "tse" | cut -d"(" -f2 | cut -d")" -f1`)
-struct_series=(${mprs[@]} ${tse[@]})
+flair=(`cat ${nih_params_file} | grep "flair" | cut -d"(" -f2 | cut -d")" -f1`)
+struct_series=(${mprs[@]} ${tse[@]} ${flair[@]})
 
 # for dicom_series in ${mprs[@]}
 # do
