@@ -1,3 +1,4 @@
+# The example below is for the CTS study.
 BASE_DIR="/data/nil-bluearc/black"
 STUDY_NAME="CTS"
 STUDY_DIR=${BASE_DIR}/${STUDY_NAME}
@@ -7,6 +8,7 @@ XNAT_HOST="https://cnda.wustl.edu"
 XNAT_PROJECT="NP1035"
 
 # These variables control which sections of the script will run
+# NOTE: Downloading DICOM data and dcm_sort will always run
 DO_FACEMASK=true
 DO_BIDS=true
 DO_MRIQC=(true and ${DO_BIDS})
