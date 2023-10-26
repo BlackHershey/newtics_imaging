@@ -84,7 +84,7 @@ function parse_BIDS_naming {
     # switch over XNAT subject and session labels to get BIDS subject and session labels
     anon_needed=false
     case "${subject_label}" in
-        CTS[1-2][0-9][0-9]_* )
+        CTS[1-2][0-9][0-9]* )
             institution_code="WU"
             # BIDS_subject=${institution_code}${subject_label}
             BIDS_subject=$(echo ${subject_label} | cut -c1-6)
