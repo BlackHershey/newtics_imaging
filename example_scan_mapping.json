@@ -1,0 +1,41 @@
+{
+	"series_desc_mapping": {
+		"T1_.8x.8x.8_224Slices": "mprs",
+		"tfl-multiecho-epinav-711_new_FOVRMS": "mprs",
+		"Mprage": "mprs",
+		"ABCD_T1w_MPR_vNav": "mprs",
+		"T2_.8x.8x.8_224Slices": "tse",
+		"t2_spc_1mm_p2": "tse",
+		"ABCD_T2w_SPC_vNav": "tse",
+		"fcMRI": "fstd",
+		"ep2d_bold*rest*": "fstd",
+		"ep2d_bold*movie*": "fstd",
+		"ep2d_bold1": "fstd",
+		"ep2d_bold2": "fstd",
+		"ep2d_bold3": "fstd",
+		"ep2d_bold_connect": "fstd",
+		"ep2d_bold_blink": "fstd",
+		"gre_field_mapping": "gre",
+		"gre_field_mapping_4x4x4_32": "gre",
+		"PCASL": "pcasl",
+		"PCASL_M0": "pcasl_m0",
+		"ep2d_tra_pasl": "pasl",
+		"ADNIASLPERFUSION": "pasl",
+		"SSh_FLAIRSENSE": "flair",
+		"t2_tirm_tra_dark-fluid": "flair",
+		"DTI_ep2d_diff_96x96_NoIPAT": "dwi",
+		"DTI_26d_b1400_MDDW_av1_72": "dwi",
+		"DTI": "dwi",
+		"ep2d_dif_25dir_av1": "dwi"
+	},
+	"irun": {
+		"fcMRI": "",
+		"ep2d_bold*rest*": "",
+		"ep2d_bold*movie*": "",
+		"ep2d_bold1": "",
+		"ep2d_bold2": "",
+		"ep2d_bold3": "",
+		"ep2d_bold_connect": "",
+		"ep2d_bold_blink": ""
+	}
+}

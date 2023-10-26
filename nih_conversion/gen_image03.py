@@ -1,4 +1,3 @@
-import csv
 import glob
 import json
 import os
@@ -7,13 +6,11 @@ import pandas as pd
 import pydicom
 import re
 import sys
+import argparse
 sys.path.append('/data/nil-bluearc/black/git/utils/4dfp')
 
 # from getpass import getpass
 from instructions import find_dicoms
-
-
-study_dir = '/data/nil-bluearc/black/NewTics'
 
 # Sequence info to include in CSV
 scan_type_map = {
@@ -49,30 +46,34 @@ Create base of image03 NIH submission file
 Note: needs to be run from unix since it relies on the sorted study files amd Windows seems unable to follow the symlinks
 Note: image03 data dictionary: https://nda.nih.gov/data_structure.html?short_name=image03
 """
-def gen_image03():
+def gen_image03(study_dir, scan_mapping_json, patid_glob_pattern):
     os.chdir(study_dir)
-    patids = [ d for d in glob.glob('NT*') if os.path.isdir(d) ]
+    patids = [ d for d in glob.glob(patid_glob_pattern) if os.path.isdir(d) ]
 
     # read in config that contains series description/scan type map (same file used for creating params file)
-    with open('NT_config.json') as f:
+    with open(scan_mapping_json) as f:
         scan_mapping = json.load(f)['series_desc_mapping']
 
     results = []
     processed_zips = []
-    for patid in patids:
-        scan_zips = glob.glob('zips/{}_study*.zip'.format(patid)) # get all zips for patid
-
+    for patid in sorted(patids):
         # infer visit_type from patid (screen/baseline, 12mo, etc.)
         if "12mo" in patid:
             visit_type = "12month"
         elif "screen" in patid:
             visit_type = "screening"
+        elif "baseline" in patid:
+            visit_type = "baseline"
+        elif "2YR" in patid:
+            visit_type = "2YR"
         else:
             # ignore anything else
-            print('WARNING: skipping {}, not a screen or 12month'.format(patid))
+            print('WARNING: skipping {}, does not match screen, 12mo, baseline or 2YR'.format(patid))
             continue
 
         print('patid = {}, visit = {}'.format(patid,visit_type))
+
+        scan_zips = glob.glob('zips/{}_study*.zip'.format(patid)) # get all zips for patid
 
         os.chdir(patid)
         for zip in scan_zips:
@@ -92,8 +93,16 @@ def gen_image03():
 
     image_df = pd.DataFrame(results, columns=columns).set_index('demo_study_id')
     image_df = image_df.assign(scan_object='Live', image_file_format='DICOM', image_modality='MRI', transformation_performed='No')
-    image_df.to_csv('image03_nodemo.csv')
+    image_df.to_csv(os.path.join(study_dir, 'image03_nodemo.csv'))
 
 
 if __name__ == '__main__':
-    gen_image03()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('study_dir', help='Base study directory containing 4dfp-style patid directories')
+    parser.add_argument('scan_mapping_json', help='JSON file containing the mapping of series description to scan type')
+    parser.add_argument('patid_glob_pattern', help="patid glob pattern to match to identify patids to process, e.g. 'NT*', 'LoTS*'")
+    args = parser.parse_args()
+    gen_image03(
+        args.study_dir, 
+        args.scan_mapping_json, 
+        args.patid_glob_pattern)
