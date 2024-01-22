@@ -144,7 +144,7 @@ curl -b JSESSIONID=${JSESSION} -o ${XNAT_PROJECT}"_MR_sessions.csv" "${XNAT_HOST
 		if ${DO_BIDS}; then
 			# convert to BIDS format
 			if [ "${BIDS_session}" != "SKIP" ] && [ ! -f "${BIDS_DIR}/sub-${BIDS_subject}/ses-${BIDS_session}/sub-${BIDS_subject}_ses-${BIDS_session}_scans.tsv" ]; then
-				${SCRIPT_DIR}/generic_dcm_to_BIDS.sh ${BIDS_subject} ${BIDS_session} ${study_dir}/${MR_ID}/${MR_ID}"_nih.cnf" ${BIDS_HEURISTIC} ${BIDS_DIR}
+				${SCRIPT_DIR}/generic_dcm_to_BIDS.sh ${BIDS_subject} ${BIDS_session} ${study_dir}/${MR_ID}/${MR_ID}"_nih.cnf" ${BIDS_HEURISTIC} ${BIDS_DIR} ${MASK_FACE_TYPE}
 			fi
 		fi
 
