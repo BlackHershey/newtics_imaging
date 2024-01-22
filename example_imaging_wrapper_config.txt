@@ -17,9 +17,15 @@ DO_ENIGMA_INPUT=true
 # A json file that map series descriptions to 4dfp params groups
 SCAN_TYPE_MAPPING_FILE=${STUDY_DIR}/${STUDY_NAME}"_scan_mapping_config.json"
 
-# XNAT mask_face
+# facemasking
+# NOTE: There is currently one type of facemasking supported, XNAT mask_face
 MASK_FACE_REDO="0"
 MASK_FACE_QA_DIR=${STUDY_DIR}/maskface_QA
+MASK_FACE_TYPE="defaced"
+
+if [[ "${MASK_FACE_TYPE}" =~ .*none.* ]]; then
+    DO_FACEMASK=false
+fi
 
 # Python environment
 VENV_BASE_DIR=${BASE_DIR}/env
@@ -33,7 +39,7 @@ BIDS_HEURISTIC=${BIDS_DIR}"/code/"${STUDY_NAME}"_heuristic.py"
 BIDS_NAMING_LOG=${STUDY_DIR}/${STUDY_NAME}"_BIDS_naming_log.csv"
 
 # MRIQC
-MRIQC_VERSION="23.0.1"
+MRIQC_VERSION="23.1.0"
 MRIQC_DOCKER_IMAGE="nipreps/mriqc:"${MRIQC_VERSION}
 NUM_MRIQC_THREADS=20
 
