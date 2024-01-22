@@ -100,6 +100,9 @@ curl -b JSESSIONID=${JSESSION} -o ${XNAT_PROJECT}"_MR_sessions.csv" "${XNAT_HOST
 			pushd ${MR_ID}
 			dcm_files=(`ls --ignore="*.SR"`)
 			dcm_first_ext=`echo ${dcm_files[0]##*.}`
+			if [ ${#dcm_first_ext} -gt 5 ]; then
+				dcm_first_ext=`echo ${dcm_files[0]} | cut -c1`
+			fi
 			popd
 			pushd ${study_dir}/${MR_ID}
 			dcm_sort -r${dcm_first_ext} ${session_dicom_dir}
