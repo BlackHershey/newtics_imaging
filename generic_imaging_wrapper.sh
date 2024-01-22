@@ -157,6 +157,7 @@ curl -b JSESSIONID=${JSESSION} -o ${XNAT_PROJECT}"_MR_sessions.csv" "${XNAT_HOST
 					-v ${BIDS_DIR}:/data:ro \
 					-v ${BIDS_DIR}/derivatives/mriqc:/out \
 					${MRIQC_DOCKER_IMAGE} \
+					--modalities T1w T2w bold \
 					--omp-nthreads ${NUM_MRIQC_THREADS} \
 					/data /out participant \
 					--participant-label ${BIDS_subject} \
