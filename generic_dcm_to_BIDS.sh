@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # USAGE
-if [ "$#" -ne 5 ]; then
-	echo "Usage: ./generic_dcm_to_BIDS.sh <BIDS subject> <BIDS session> <params file>                         <heuristic script>                         <BIDS directory>"
-	echo " e.g.: ./generic_dcm_to_BIDS.sh  NT999          screen         /some/directory/NT999_screen_nih.cif  /some/directory/generic_BIDS_heuristic.py  /some/study/directory/BIDS"
+if [ "$#" -ne 6 ]; then
+	echo "Usage: ./generic_dcm_to_BIDS.sh <BIDS subject> <BIDS session> <params file>                         <heuristic script>                         <BIDS directory>            <defacing type>"
+	echo " e.g.: ./generic_dcm_to_BIDS.sh  NT999          screen         /some/directory/NT999_screen_nih.cif  /some/directory/generic_BIDS_heuristic.py  /some/study/directory/BIDS defaced"
 	exit 1
 fi
 
@@ -15,6 +15,7 @@ session_label=${2}
 params_file=${3}
 heuristic_script=${4}
 bids_dir=${5}
+defacing_type=${6}
 
 cd ${bids_dir}
 
@@ -42,7 +43,12 @@ other_series=(${fstd[@]} ${sbref[@]} ${gre[@]} ${sefm[@]} ${dwi[@]} ${pcasl[@]} 
 
 for dicom_series in ${struct_series[@]}
 do
-	dicom_dirs="${dicom_dirs}"" ${dcm_sorted_dir}/study${dicom_series}_defaced"
+	case "${defacing_type}" in
+        defaced ) dicom_dirs="${dicom_dirs}"" ${dcm_sorted_dir}/study${dicom_series}_defaced" ;;
+		refaced ) dicom_dirs="${dicom_dirs}"" ${dcm_sorted_dir}/study${dicom_series}_refaced" ;;
+		none ) dicom_dirs="${dicom_dirs}"" ${dcm_sorted_dir}/study${dicom_series}" ;;
+		* ) dicom_dirs="${dicom_dirs}"" ${dcm_sorted_dir}/study${dicom_series}" ;;
+    esac
 done
 
 for dicom_series in ${other_series[@]}
