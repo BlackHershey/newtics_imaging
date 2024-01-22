@@ -100,6 +100,9 @@ curl -b JSESSIONID=${JSESSION} -o ${XNAT_PROJECT}"_MR_sessions.csv" "${XNAT_HOST
 			pushd ${MR_ID}
 			dcm_files=(`ls --ignore="*.SR"`)
 			dcm_first_ext=`echo ${dcm_files[0]##*.}`
+			if [ ${#dcm_first_ext} -gt 5 ]; then
+				dcm_first_ext=`echo ${dcm_files[0]} | cut -c1`
+			fi
 			popd
 			pushd ${study_dir}/${MR_ID}
 			dcm_sort -r${dcm_first_ext} ${session_dicom_dir}
@@ -141,7 +144,7 @@ curl -b JSESSIONID=${JSESSION} -o ${XNAT_PROJECT}"_MR_sessions.csv" "${XNAT_HOST
 		if ${DO_BIDS}; then
 			# convert to BIDS format
 			if [ "${BIDS_session}" != "SKIP" ] && [ ! -f "${BIDS_DIR}/sub-${BIDS_subject}/ses-${BIDS_session}/sub-${BIDS_subject}_ses-${BIDS_session}_scans.tsv" ]; then
-				${SCRIPT_DIR}/generic_dcm_to_BIDS.sh ${BIDS_subject} ${BIDS_session} ${study_dir}/${MR_ID}/${MR_ID}"_nih.cnf" ${BIDS_HEURISTIC} ${BIDS_DIR}
+				${SCRIPT_DIR}/generic_dcm_to_BIDS.sh ${BIDS_subject} ${BIDS_session} ${study_dir}/${MR_ID}/${MR_ID}"_nih.cnf" ${BIDS_HEURISTIC} ${BIDS_DIR} ${MASK_FACE_TYPE}
 			fi
 		fi
 
@@ -154,6 +157,7 @@ curl -b JSESSIONID=${JSESSION} -o ${XNAT_PROJECT}"_MR_sessions.csv" "${XNAT_HOST
 					-v ${BIDS_DIR}:/data:ro \
 					-v ${BIDS_DIR}/derivatives/mriqc:/out \
 					${MRIQC_DOCKER_IMAGE} \
+					--modalities T1w T2w bold \
 					--omp-nthreads ${NUM_MRIQC_THREADS} \
 					/data /out participant \
 					--participant-label ${BIDS_subject} \
@@ -209,7 +213,7 @@ curl -b JSESSIONID=${JSESSION} -o ${XNAT_PROJECT}"_MR_sessions.csv" "${XNAT_HOST
 						anon_number=`grep ${base_subject} ${ANON_KEY_CSV} | cut -d"," -f3`
 						anon_cohort=`grep ${base_subject} ${ANON_KEY_CSV} | cut -d"," -f4`
 						echo "anonymization = "${anon_cohort}" "${anon_number}
-						enigma_subjid="sub-"${institution_code}${anon_cohort}`printf "%03d" ${anon_number}`"_ses-"${BIDS_session}
+						enigma_subjid="sub-"${institution_code}${anon_cohort}${anon_number}"_ses-"${BIDS_session}
 					else 
 						enigma_subjid="sub-"${BIDS_subject}"_ses-"${BIDS_session}
 					fi

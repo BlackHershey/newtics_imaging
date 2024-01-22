@@ -62,13 +62,17 @@ def gen_image03(study_dir, scan_mapping_json, patid_glob_pattern):
             visit_type = "12month"
         elif "screen" in patid:
             visit_type = "screening"
+        elif "baseline2" in patid:
+            visit_type = "baseline2"
         elif "baseline" in patid:
             visit_type = "baseline"
+        elif "2YR2" in patid:
+            visit_type = "2YR2"
         elif "2YR" in patid:
             visit_type = "2YR"
         else:
             # ignore anything else
-            print('WARNING: skipping {}, does not match screen, 12mo, baseline or 2YR'.format(patid))
+            print('WARNING: skipping {}, does not match screen, 12mo, baseline(2) or 2YR(2)'.format(patid))
             continue
 
         print('patid = {}, visit = {}'.format(patid,visit_type))
