@@ -212,7 +212,7 @@ curl -b JSESSIONID=${JSESSION} -o ${XNAT_PROJECT}"_MR_sessions.csv" "${XNAT_HOST
 						anon_number=`grep ${base_subject} ${ANON_KEY_CSV} | cut -d"," -f3`
 						anon_cohort=`grep ${base_subject} ${ANON_KEY_CSV} | cut -d"," -f4`
 						echo "anonymization = "${anon_cohort}" "${anon_number}
-						enigma_subjid="sub-"${institution_code}${anon_cohort}`printf "%03d" ${anon_number}`"_ses-"${BIDS_session}
+						enigma_subjid="sub-"${institution_code}${anon_cohort}${anon_number}"_ses-"${BIDS_session}
 					else 
 						enigma_subjid="sub-"${BIDS_subject}"_ses-"${BIDS_session}
 					fi
