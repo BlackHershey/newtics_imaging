@@ -134,10 +134,15 @@ curl -b JSESSIONID=${JSESSION} -o ${XNAT_PROJECT}"_MR_sessions.csv" "${XNAT_HOST
 			continue
 		fi
 
+		# Fix ImageType in XA30 CMRR and MGH DICOMs
+		pushd ${study_dir}/${MR_ID}
+		python ${SCRIPT_DIR}/dcm_fix_image_type.py ${study_dir}/${MR_ID}
+		popd
+
 		if ${DO_FACEMASK}; then
 			# Run XNAT mask_face face-masking on DICOMs
 			pushd ${study_dir}/${MR_ID}
-			${SCRIPT_DIR}/facemask_MR_session.sh ${study_dir}/${MR_ID}/${MR_ID}"_nih.cnf" ${MASK_FACE_QA_DIR} ${MASK_FACE_REDO}
+			${SCRIPT_DIR}/facemask_MR_session.sh ${study_dir}/${MR_ID}/${MR_ID}"_nih.cnf" ${MASK_FACE_QA_DIR} ${MASK_FACE_TYPE} ${MASK_FACE_REDO}
 			popd
 		fi
 
