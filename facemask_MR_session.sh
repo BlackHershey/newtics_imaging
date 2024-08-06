@@ -3,11 +3,12 @@
 scripts_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 nih_params_file=${1}
 QA_dir=${2}
+deface_type=${3}
 
-if [ "$#" -lt 3 ]; then
+if [ "$#" -lt 4 ]; then
 	redo="0"
 else
-	redo=${3}
+	redo=${4}
 fi
 
 MR_ID=$(basename "${nih_params_file}" | sed 's/_nih.cnf//')
@@ -30,11 +31,37 @@ struct_series=(${mprs[@]} ${tse[@]} ${flair[@]})
 # 	echo ${MR_ID}","${dicom_series}",T2" >> ${output_csv}
 # done
 
-for dicom_series in ${struct_series[@]}
-do
-	if [ ! -d "study${dicom_series}_defaced" ] || [ "${redo}" -gt 0 ]; then
-		${scripts_dir}/mask_face_wrapper.csh ${MR_session_dir}/study${dicom_series} ${QA_dir}
-	fi
-done
+# check which defacing type
+case "${deface_type}" in
+	defaced )
+		deface_label="defaced"
+		for dicom_series in ${struct_series[@]}
+		do
+			if [ ! -d "study${dicom_series}_${deface_label}" ] || [ -z "$( ls -A study${dicom_series}_${deface_label} )" ] || [ "${redo}" -gt 0 ]; then
+				${scripts_dir}/mask_face_wrapper.sh ${MR_session_dir}/study${dicom_series} ${QA_dir}
+			fi
+		done ;;
+	refaced ) 
+		deface_label="refaced"
+		for dicom_series in ${mprs[@]}
+		do
+			if [ ! -d "study${dicom_series}_${deface_label}" ] || [ "${redo}" -gt 0 ]; then
+				${scripts_dir}/reface_DICOM_wrapper.sh ${MR_session_dir}/study${dicom_series} T1 ${QA_dir}
+			fi
+		done
+		for dicom_series in ${tse[@]}
+		do
+			if [ ! -d "study${dicom_series}_${deface_label}" ] || [ "${redo}" -gt 0 ]; then
+				${scripts_dir}/reface_DICOM_wrapper.sh ${MR_session_dir}/study${dicom_series} T2 ${QA_dir}
+			fi
+		done
+		for dicom_series in ${flair[@]}
+		do
+			if [ ! -d "study${dicom_series}_${deface_label}" ] || [ "${redo}" -gt 0 ]; then
+				${scripts_dir}/reface_DICOM_wrapper.sh ${MR_session_dir}/study${dicom_series} FLAIR ${QA_dir}
+			fi
+		done ;;
+esac
+
 
 exit 0

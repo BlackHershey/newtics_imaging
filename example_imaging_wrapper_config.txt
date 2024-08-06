@@ -22,6 +22,7 @@ SCAN_TYPE_MAPPING_FILE=${STUDY_DIR}/${STUDY_NAME}"_scan_mapping_config.json"
 MASK_FACE_REDO="0"
 MASK_FACE_QA_DIR=${STUDY_DIR}/maskface_QA
 MASK_FACE_TYPE="defaced"
+# MASK_FACE_TYPE="refaced"
 
 if [[ "${MASK_FACE_TYPE}" =~ .*none.* ]]; then
     DO_FACEMASK=false
